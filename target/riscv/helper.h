@@ -1286,4 +1286,4 @@ DEF_HELPER_4(vsm4r_vv, void, ptr, ptr, env, i32)
 DEF_HELPER_4(vsm4r_vs, void, ptr, ptr, env, i32)
 
 // G233
-DEF_HELPER_(dma, void, )
+DEF_HELPER_4(dma, void, env, tl, tl, tl)

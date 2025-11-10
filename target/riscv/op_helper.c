@@ -718,3 +718,33 @@ target_ulong helper_hyp_hlvx_wu(CPURISCVState *env, target_ulong addr)
 }
 
 #endif /* !CONFIG_USER_ONLY */
+
+target_ulong helper_dma(CPURISCVState *env, target_ulong rd, target_ulong rs1, target_ulong rs2) {
+    /**
+     * rs1 矩阵在内存源地址
+     * rs2 矩阵规模 =0, 1, 2
+     * rd  目的矩阵在内存中的地址
+     */
+
+    uint32_t src_addr = env->gpr[rs1];
+    uint32_t dst_addr = env->gpr[rs2];
+    int M = (1 << rs2) * 8;
+    int N = (1 << rs2) * 8;
+    const int elem_size = 4;
+
+    MemOpIdx load_oi = make_memop_idx();
+    MemOpIdx store_oi = make_memop_idx();
+    for (int i = 0; i < M; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            // C[i * M + j] = A[j * N + i];
+            uint32_t ld_addr = src_addr + i * N * elem_size + j * elem_size;
+            uint32_t st_addr = src_addr + j * M * elem_size + i * elem_size;
+            uint32_t val = helper_ldul_mmu(env, ld_addr, load_oi, GETPC());
+            helper_stl_mmu(env, st_addr, store_oi, GETOC());
+        }
+        
+    }
+    
+}
