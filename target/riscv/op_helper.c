@@ -745,14 +745,57 @@ void helper_dma(CPURISCVState *env, target_ulong dst, target_ulong src, target_u
     
 }
 
-void helper_sort(CPURISCVState *env, target_ulong rd, target_ulong rs1, target_ulong rs2) {
+void helper_sort(CPURISCVState *env, target_ulong addr, target_ulong sort_num, target_ulong arr_num) {
+    const int elem_size = 4;
+
+    int n = (sort_num < arr_num) ? sort_num : arr_num;
+    
+    for (int i = 0; i < n - 1; i++) {
+        int swapped = 0;
+        for (int j = 0; j < n - i - 1; j++) {
+            uint32_t offset = j * elem_size;
+            uint32_t arr_j = cpu_ldl_data(env, addr+offset);
+            uint32_t arr_j1 = cpu_ldl_data(env, addr+offset+elem_size);
+            if (arr_j > arr_j1) {
+                cpu_stl_data(env, addr+offset,arr_j1);
+                cpu_stl_data(env, addr+offset+elem_size,arr_j);
+                swapped = 1;
+            }
+        }
+        if (!swapped) {
+            break;
+        }
+    }
+}
+
+void helper_crush(CPURISCVState *env, target_ulong dst, target_ulong src, target_ulong num) {
+    size_t i = 0;
+    size_t j = 0;
+
+    while (i + 1 < num) {
+        uint8_t val_l = cpu_ldub_data(env, src + i) & 0x0F;
+        uint8_t val_h = cpu_ldub_data(env, src + i+1) & 0x0F;
+        uint8_t val = val_l | (val_h << 4);
+        cpu_stb_data(env, dst + j , val);
+        i += 2;
+        j++;
+    }
+
+    if (i < num) {
+        uint8_t val = cpu_ldub_data(env, src + i) & 0x0F;
+        cpu_stb_data(env, dst + j , val);
+        j++;
+    }
 
 }
 
-void helper_crush(CPURISCVState *env, target_ulong rd, target_ulong rs1, target_ulong rs2) {
-
-}
-
-void helper_expand(CPURISCVState *env, target_ulong rd, target_ulong rs1, target_ulong rs2) {
-
+void helper_expand(CPURISCVState *env, target_ulong dst, target_ulong src, target_ulong num) {
+    size_t j = 0;
+    for (size_t i = 0; i < num; i++) {
+        uint8_t val = cpu_ldub_data(env, src + i);
+        cpu_stb_data(env, dst + j , val & 0x0F);
+        j++;
+        cpu_stb_data(env, dst + j , (val >> 4) & 0x0F);
+        j++;
+    }
 }
